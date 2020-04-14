@@ -1,5 +1,6 @@
 const express = require("express");
 const fs = require("fs");
+const createError = require("http-errors");
 const app = express();
 const morgan = require("morgan");
 const path = require("path");
@@ -28,16 +29,39 @@ app.post("/api/v1/on-covid-19", (req, res) => {
 });
 
 app.get("/api/v1/on-covid-19/json", function (req, res, next) {
-  res.json(covidData[0]);
+  if (covidData.length > 0) {
+    res.json(covidData[0]);
+  } else {
+    res.json({});
+  }
 });
 
 app.get("/api/v1/on-covid-19/xml", function (req, res, next) {
-  res.type("application/xml").send(covidData[0]);
+  if (covidData.length > 0) {
+    res.type("application/xml").send(covidData[0]);
+  } else {
+    res.type("application/xml").send({});
+  }
 });
 
 app.get("/api/v1/on-covid-19/logs", function (req, res, next) {
   fs.readFile("logs.txt", "utf8", (err, data) => {
     res.send(data);
+  });
+});
+
+app.use((req, res, next) => {
+  next(createError(404));
+});
+
+app.use((err, req, res, next) => {
+  return next(err);
+});
+
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    error: "error",
+    message: err.message,
   });
 });
 
